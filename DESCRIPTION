@@ -1,7 +1,7 @@
 Package: vesalius
 Type: Package
 Title: Vesalius: Dissecting Tissue Anatomy from Spatial Transcriptomic Data
-Version: 1.1.0
+Version: 1.0.0
 Author: Patrick C.N. Martin
 Maintainer: Patrick C.N. Martin <patrick.martin@bric.ku.dk>
 Description: We present Vesalius to decipher tissue anatomy by embracing various
@@ -13,7 +13,7 @@ License: GPL-3
 Collate: IsolatingTerritories.R
     morph.R
     misc.R
-    PCA_to_RGB.R
+    composite.R
     Prog.R
     Territory_identity.R
     viz.R
@@ -21,12 +21,13 @@ Collate: IsolatingTerritories.R
     data.R
     objects.R
     embeddings.R
+    format.R
+    objectUtilities.R
+    PCA_to_RGB.R
 Depends: R (>= 4.0.0),
     Seurat,
     imager,
-    dplyr,
-    tidyr,
-    ggplot2
+    tidyverse
 Imports:
     grDevices,
     graphics,
@@ -35,13 +36,13 @@ Imports:
     deldir,
     sp,
     tvR,
-    concaveman,
     Matrix,
     RColorBrewer,
     parallel,
     imagerExtra,
-    methods
-    Signac
+    methods,
+    Signac,
+    ggpubr
 Suggests:
     knitr,
     RUnit,

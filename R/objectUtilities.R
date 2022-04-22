@@ -41,6 +41,8 @@
     if(append & slot != "territories" ){
         slot(vesalius,slot) <- c(slot(vesalius,slot),data)
         vesalius <- .commitLog(vesalius,commit,defaults,slot)
+
+
     }else if(append & slot == "territories" ) {
         if(!is.null(slot(vesalius,slot))){
 
@@ -53,8 +55,8 @@
         }
         vesalius <- .commitLog(vesalius,commit,defaults,slot)
     } else {
-            slot(vesalius,slot) <- data
-            vesalius <- .commitLog(vesalius,commit,defaults,slot)
+        slot(vesalius,slot) <- data
+        vesalius <- .commitLog(vesalius,commit,defaults,slot)
     }
     return(vesalius)
 }
@@ -79,6 +81,8 @@
     defs <- sapply(defaults, function(x){
         if(class(x)=="call"){
             x <- as.character(x)[2L]
+        } else if(is.null(x)){
+            x <- "NULL"
         }
         return(unlist(x))
     })
@@ -91,8 +95,12 @@
     #--------------------------------------------------------------------------#
     if(length(commit)>1){
       for(i in seq(2,length(commit))){
-
-          logdf$Value[logdf$Argument == names(commit)[i]] <- as.character(commit[[i]])
+          if(length(as.character(commit[[i]]))>1){
+              com <- paste0(as.character(commit[[i]]), collapse ="_")
+          } else {
+              com <-as.character(commit[[i]])
+          }
+          logdf$Value[logdf$Argument == names(commit)[i]] <- com
       }
     }
     #--------------------------------------------------------------------------#
@@ -184,4 +192,29 @@ getCounts <- function(vesalius, type = "raw"){
 
 viewLogTree <- function(vesalius){
     return(vesalius@log)
+}
+
+viewTrialSummary <- function(vesalius){
+    trials <- lapply(c("Segment","Territory","Morphology","Layer"),
+                        function(id,vesalius){
+                        return(grep(x=colnames(vesalius@territories),
+                                    pattern = id, value = TRUE))
+                        },vesalius)
+    maxTrials <- max(sapply(trials, length))
+    
+    if(maxTrials == 0){
+        stop("No Territory Trials to be found!")
+    } else {
+        trials <- lapply(trials,function(trial,max){
+            if(max - length(trial)==0){
+               return(trial)
+            }else{
+               return(c(trial,rep("-",times = max - length(trial))))
+            }
+
+        },max = maxTrials)
+        trials <- do.call("cbind", trials)
+        colnames(trials) <- c("Segment","Territory","Morphology","Layer")
+    }
+    return(trials)
 }

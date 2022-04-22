@@ -56,7 +56,7 @@ setMethod("show",
 #------------------------------------------------------------------------------#
 
 setClassUnion("ter",c("data.frame","NULL"))
-setClassUnion("DEG",c("data.frame","NULL"))
+#setClassUnion("DEG",c("data.frame","NULL"))
 
 
 
@@ -70,7 +70,7 @@ setClass("vesaliusObject",
                     embeddings = "list",
                     activeEmbeddings = "list",
                     territories = "ter",
-                    DEG = "DEG",
+                    DEG = "list",
                     counts  = "list",
                     log = "log"),
          prototype=c(tiles = data.frame(),
@@ -88,7 +88,7 @@ setClass("vesaliusObject",
         if(is(object@territories)[1L]!= "data.frame" & is(object@territories)[1L]!= "NULL"){
             stop("Unsupported territories Format")
         }
-        if(is(object@DEG)[1L]!= "data.frame" & is(object@DEG)[1L]!= "NULL"){
+        if(is(object@DEG)[1L]!= "list"){
             stop("Unsupported DEG Format")
         }
         if(is(object@counts)[1L]!= "list"){
@@ -130,11 +130,11 @@ buildVesaliusObject <- function(coordinates,counts,assay = "ST"){
 
 .checkCounts <- function(counts){
 
-    if(class(counts) == "data.frame"){
+    if(any(is(counts)== "data.frame")){
       counts <- as(as.matrix(counts),"dgCMatrix")
-    } else if(class(counts) == "matrix"){
+    } else if(any(is(counts) == "matrix")){
       counts <- as(counts,"dgCMatrix")
-    } else if(class(counts) == "dgCMatrix"){
+    } else if(any(is(counts) == "dgCMatrix")){
       counts <- counts
     } else {
       stop("Unsupported count format!")
@@ -147,7 +147,6 @@ buildVesaliusObject <- function(coordinates,counts,assay = "ST"){
     #--------------------------------------------------------------------------#
     # Check coordinate input type
     # for now let's put slide seq
-    # we can add some more loading functions later and santise from there
     #--------------------------------------------------------------------------#
     if(all(c("barcodes","xcoord","ycoord") %in% colnames(coordinates))){
         coordinates <- coordinates[,c("barcodes","xcoord","ycoord")]
@@ -157,6 +156,19 @@ buildVesaliusObject <- function(coordinates,counts,assay = "ST"){
     } else {
         stop("Unknown column names")
     }
+    #--------------------------------------------------------------------------#
+    # making sure that we have a data frame
+    #--------------------------------------------------------------------------#
+    if(any(is(coordinates) == "matrix")){
+        coordinates <- as.data.frame(coordinates)
+    }
+    #--------------------------------------------------------------------------#
+    # ensuring that we have the right type in each column
+    #--------------------------------------------------------------------------#
+    coordinates$barcodes <- as.character(coordinates$barcodes)
+    coordinates$x <- as.numeric(coordinates$x)
+    coordinates$y <- as.numeric(coordinates$y)
+
     return(coordinates)
 }
 
@@ -172,9 +184,22 @@ setMethod("show",
       #------------------------------------------------------------------------#
       ### To be modified later
       #------------------------------------------------------------------------#
-      cat("Vesalius Object containing:\n")
+      cat("Vesalius Object containing:\n\n")
       ntiles <- length(unique(object@tiles$barcodes))
-      cat(ntiles,"tiles \n")
+      cat(ntiles,"tiles \n\n")
+      #------------------------------------------------------------------------#
+      # Showing assays
+      #------------------------------------------------------------------------#
+      if((assay <- length(object@log@assay)) > 0){
+        n <- unlist(object@log@assay)
+        cat(assay, "assays (",n,")\n")
+        #----------------------------------------------------------------------#
+        # Adding active embedding
+        #----------------------------------------------------------------------#
+
+        n <- object@log@assay[[length(object@log@assay)]]
+        cat(n ,"as active assay\n\n")
+      }
       #------------------------------------------------------------------------#
       # Showing norm
       #------------------------------------------------------------------------#
@@ -186,7 +211,7 @@ setMethod("show",
         #----------------------------------------------------------------------#
 
         n <- names(object@counts)[counts]
-        cat(n ,"as active normalized data\n")
+        cat(n ,"as active normalized data\n\n")
       }
       #------------------------------------------------------------------------#
       # showing embeds
@@ -199,7 +224,7 @@ setMethod("show",
         #----------------------------------------------------------------------#
 
         n <- names(object@activeEmbeddings)
-        cat(n ,"as active Embedding\n")
+        cat(n ,"as active Embedding\n\n")
       }
 
       #------------------------------------------------------------------------#
@@ -215,16 +240,16 @@ setMethod("show",
       if(!is.null(object@territories)){
           ter <-object@territories[,ncol(object@territories)]
           cat(length(unique(ter)),
-          "territories in",colnames(object@territories)[ncol(object@territories)],"\n")
+          "territories in",colnames(object@territories)[ncol(object@territories)],"\n\n")
       }
       #------------------------------------------------------------------------#
       #If there are DEG
       #To update based on how we call the base groups
       #------------------------------------------------------------------------#
-      if(!is.null(object@DEG)){
-          deg <- nrow(object@DEG)
-          ters <- length(unique(c(object@DEG$seedTerritory,object@DEG$queryTerritory)))
-          cat(deg, "Differentially Expressed Genes between", ters,"territories\n")
+      if(length(object@DEG)>0){
+          deg <- object@DEG[[length(object@DEG)]]
+          ters <- length(unique(c(deg$seedTerritory,deg$queryTerritory)))
+          cat(nrow(deg), "Differentially Expressed Genes between", ters,"territories\n")
       }
 
 
