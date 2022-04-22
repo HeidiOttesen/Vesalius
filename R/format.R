@@ -95,7 +95,7 @@
       barcodes <- left_join(tiles,img, by = c("x","y")) %>%
                   filter(origin == 1) %>% na.exclude()
 
-      locs <- match(rownames(embeds),barcodes$barcodes)
+      locs <- match(rownames(embed),barcodes$barcodes)
       embeddings[locs,dims[i]] <- barcodes$value
 
     }
