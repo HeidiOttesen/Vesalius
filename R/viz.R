@@ -94,8 +94,8 @@ imagePlot <- function(vesalius,
 
 
 #' territoryPlot plotting Vesalius territories
-#' @param territories a Vesalius data frame conatining territory information
-#' (i.e. containing the terriotry column)
+#' @param territories a Vesalius data frame containing territory information
+#' (i.e. containing the territory column)
 #' @param split logical - If TRUE, territories will be plotted in
 #' separate panels
 #' @param randomise logical - If TRUE, colour palette will be randomised.
