@@ -1,3 +1,7 @@
+cimg.plot <- function(image, step) {
+  ss <- subset(image, select=c(x, y, cc, value))
+  g <- as.cimg(ss) %>% plot(main=c(step, "Array (as.cimg)"))
+}
 
 KNN.DNA.Unique <- function(bead, df, k){
   ## Start
@@ -20,21 +24,23 @@ KNN.DNA.Unique <- function(bead, df, k){
   #- Remove those barcodes from your barcodes vector so that each barcode is only used once
   #- Lots of groups with only 1/2/3... neighbors - not full groups
   #- There are also sometimes leftovers not placed in any group
-    
-  bc <- barcodes
-  knn.bc1 <- vector(mode="list", length=l) #holds unique barcodes in groups of up to k
-  #doubles <- vector(mode="list", length=l) #Probably don't need this..
-  knn.bc2 <- vector(mode="list", length=l) #unique again but without NA elements (Still null groups)
+  bc <- barcodes    # copy of barcode list to remove from as we iterate - to only get unique
+  knn.bc1 <- vector(mode="list", length=length(bc)) #holds unique barcodes in groups of up to k
+  knn.bc2 <- vector(mode="list", length=length(bc)) #unique again but without NA elements (Still null groups)
   
   #Simpler? Try next time for unique!:
   cat(paste(Sys.time()," Using only unique barcodes in KNN groups", "\n"))
   for(i in seq_along(barcodes)){
-    b <- barcodes[knnIx[i,j]]
-    if(b %in% bc){
-      knn.bc1[[i]] <- b
+    b <- barcodes[knnIx[i,]]
+    for(j in seq_along(b)){
+      br <- b[[j]]
+      if(br %in% bc){       ## if current barcode still exists in the copy of barcodes we can add it to the new knn list
+        knn.bc1[[i]][j] <- br
+      }
     }
-    bc <- bc[!bc %in% b]
-    knn.bc2[[i]] <- x[!is.na(knn.bc1[[i]])]
+    bc <- bc[!bc %in% b] #remove the barcodes from current barcode group - keep only unused barcodes
+    x <- knn.bc1[[i]]
+    knn.bc2[[i]] <- x[!is.na(x)] #Remove all NA elements
   }
   
   
@@ -48,12 +54,12 @@ KNN.DNA.Unique <- function(bead, df, k){
   #- Stores the median x and y for each column in new list - comb
   #- makes a new list of new barcode names, bc.g - the first barcode in each group
   
-  i <- 1
+  
   l <- length(knn.bc2)
   comb <- matrix(0, nrow = l, ncol = ncol(bead.coords))
   bc.g <- vector(length=l)
   cat(paste(Sys.time()," Finding median coordinate for each knn group", "\n"))
-  while(i <= l){
+  for(i in seq(l)){
     tmp <- knn.bc2[[i]]
     t <- bead.coords[tmp,]
     ltmp <- length(tmp)
@@ -64,14 +70,13 @@ KNN.DNA.Unique <- function(bead, df, k){
     i <- i + 1 
   }
   
-  length(unique(bc.g)) #15737
-  length(bc.g) #38313
+  length(unique(bc.g)) 
+  length(bc.g) 
  
   rownames(comb) <- bc.g
   colnames(comb) <- c("xcoord", "ycoord")
   
   #Remove NA values and empty groups
-  
   row.has.na <- apply(comb, 1, function(x){any(is.na(x))})
   comb <- comb[!row.has.na,]
   knn.bc <- knn.bc2[!sapply(knn.bc2,is.null)]
@@ -89,7 +94,7 @@ KNN.DNA.Unique <- function(bead, df, k){
   cat(paste(Sys.time()," Number of KNN groups with only unique barcodes: ", l, "\n"))
   grMtrx <- matrix(0, nrow = nrow(spMtrx), ncol = l)
   cat( paste(Sys.time()," Summing the counts for each group and bin", "\n"))
-  while(i <= l){
+  for(i in seq_along(knn.bc)){
     tmp <- knn.bc[[i]]
     t <- spMtrx[,tmp]
     ltmp <- length(tmp)
@@ -116,6 +121,7 @@ KNN.DNA.Unique <- function(bead, df, k){
   ss <- new(Class = 'SlideSeq',assay = "Spatial",
             coordinates = comb[,c("xcoord","ycoord")])
   rownames(ss@coordinates) <- rownames(comb)
+  ss <- ss@coordinates
   
   colnames(grMtrx) <- bc.comb
   rownames(grMtrx) <- bins
@@ -128,12 +134,12 @@ KNN.DNA.Unique <- function(bead, df, k){
 
 
 
-
+#' KNN.DNA - Perform K nearest neighbor on count matrix with coordinates
+#' @param bead SlideSeq object containing barcode coordinate information
+#' @param df Matrix containing the sparse counts of bins
+#' @param k Number of neighbors to sum counts of
 
 KNN.DNA <- function(bead, df, k){
-  # Input:  Count matrix as dataframe 
-  #         Bead info from the DNA_vesalius markdown..
-  # Barcodes and coordinates from bead_locations
   barcodes <- rownames(bead@coordinates)
   bead.coords <- bead@coordinates
   coords <- cbind(bead.coords$xcoord, bead.coords$ycoord)
