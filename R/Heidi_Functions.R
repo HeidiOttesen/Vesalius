@@ -174,3 +174,63 @@ KNN.DNA <- function(bead, df, k){
   #knnSpMtx <- Matrix(grMtrx, sparse = TRUE)
   return(list(grMtrx, bead.coords))
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#' binLocations - Retrieve chromosome location information from bin-index number
+#' @param int.bins The top interesting bins
+#' @param ref.bins Reference bins - either mouse (mm10) or human (hg19)
+
+binLocations <- function(int.bins, ref.bins){
+  chr <- data_frame()
+  for(i in seq_along(int.bins$genes)){
+    x <- as.list(subset(ref.bins, bin_ind==int.bins$genes[[i]]))
+    chr <- bind_rows(chr, x)
+  }
+  chr <- chr[c("bin_start", "bin_end", "chr_ind", "bin_ind")]
+  
+  names(int.bins)[names(int.bins) == 'genes'] <- 'bin_ind'
+  bin.chr <- merge(chr, int.bins)
+  bin.chr <- bin.chr[order(bin.chr$bin_start),]
+  bin.chr <- bin.chr[order(bin.chr$chr_ind),]
+  return(bin.chr)
+}
+
+
+genesBioMart <- function(int.bins, alias){
+  library(biomaRt)
+  if(grepl("human",alias)){
+    mart <- useMart(biomart="ENSEMBL_MART_ENSEMBL", host="grch37.ensembl.org", path="/biomart/martservice", dataset="hsapiens_gene_ensembl")
+  } else if(grepl("mouse",alias)){
+    mart <- useMart(biomart="ENSEMBL_MART_ENSEMBL", host="nov2020.archive.ensembl.org", path="/biomart/martservice", dataset="mmusculus_gene_ensembl")
+  }
+  
+  r <- vector()
+  genes <- data.frame()
+  for(i in seq_along(int.bins$X)){
+    r <- list(int.bins$chr_ind[i], int.bins$bin_start[i], int.bins$bin_end[i])
+    # Skip "go_id" to get fewer results...
+    g <- getBM(c("external_gene_name", "description", "ensembl_gene_id", "gene_biotype", "chromosome_name", 
+                 "start_position","end_position", "strand"),
+               filters=c("chromosome_name","start","end"),
+               values=r, mart=mart)
+    genes <- rbind(genes, g)
+  }
+  genes <- genes[order(genes$start_position),]
+  genes <- genes[order(genes$chromosome_name),]
+  return(genes)
+}
+
+
