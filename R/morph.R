@@ -213,7 +213,7 @@ layerTerritory <- function(vesalius,
     # If we run this then we always take the last trial run
     # this will update the morphology only if it is run
     #--------------------------------------------------------------------------#
-    if(sum(morphologyFactor)!=0){
+    if(all(morphologyFactor==0)){
        .morph(verbose)
         vesalius <- territoryMorphing(vesalius,
                                       territory,
