@@ -190,7 +190,7 @@ KNN.DNA <- function(bead, df, k){
 
 
 #' binLocations - Retrieve chromosome location information from bin-index number
-#' @param int.bins The top interesting bins
+#' @param bin.chr The top interesting bins with chromosomal location information
 #' @param ref.bins Reference bins - either mouse (mm10) or human (hg19)
 
 binLocations <- function(int.bins, ref.bins){
@@ -209,7 +209,7 @@ binLocations <- function(int.bins, ref.bins){
 }
 
 
-genesBioMart <- function(int.bins, alias){
+genesBioMart <- function(bin.chr, alias){
   library(biomaRt)
   if(grepl("human",alias)){
     mart <- useMart(biomart="ENSEMBL_MART_ENSEMBL", host="grch37.ensembl.org", path="/biomart/martservice", dataset="hsapiens_gene_ensembl")
@@ -219,8 +219,8 @@ genesBioMart <- function(int.bins, alias){
   
   r <- vector()
   genes <- data.frame()
-  for(i in seq_along(int.bins$X)){
-    r <- list(int.bins$chr_ind[i], int.bins$bin_start[i], int.bins$bin_end[i])
+  for(i in seq_along(bin.chr$bin_ind)){ #OBS! which column/$group can i seq_along - different names in chromosome vs bin?
+    r <- list(bin.chr$chr_ind[i], bin.chr$bin_start[i], bin.chr$bin_end[i])
     # Skip "go_id" to get fewer results...
     g <- getBM(c("external_gene_name", "description", "ensembl_gene_id", "gene_biotype", "chromosome_name", 
                  "start_position","end_position", "strand"),
