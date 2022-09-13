@@ -3,6 +3,7 @@ cimg.plot <- function(image, step) {
   g <- as.cimg(ss) %>% plot(main=c(step, "Array (as.cimg)"))
 }
 
+
 KNN.DNA.Unique <- function(bead, df, k){
   ## Start
   #- Make sure you have the count df and bead info from the DNA_vesalius markdown..
@@ -43,18 +44,13 @@ KNN.DNA.Unique <- function(bead, df, k){
     knn.bc2[[i]] <- x[!is.na(x)] #Remove all NA elements
   }
   
-  
-  
   cat(paste(Sys.time()," Number of barcodes not included: ", length(bc), "\n"))
-  
   
   ## Find median coordinate within knn group
   #- iterate over groups of knn 
   #- stores their corresponding x and y coordinates in vector t
   #- Stores the median x and y for each column in new list - comb
   #- makes a new list of new barcode names, bc.g - the first barcode in each group
-  
-  
   l <- length(knn.bc2)
   comb <- matrix(0, nrow = l, ncol = ncol(bead.coords))
   bc.g <- vector(length=l)
@@ -179,9 +175,33 @@ KNN.DNA <- function(bead, df, k){
 
 
 
+#' chromosomeCounts - Sum counts of bins over full chromosomes
+#' @param df count matrix
+#' @param bin.all bin index + chromosome + chr location information
+
+## Replace bin index with chromosome number - nope they are unique rownames in the df matrix
+# Make groups of bin indexes based on chromosome index
+# Sum counts of each chromosome
 
 
-
+chromosomeCounts <- function(df, bin.all){
+  ## Summing counts across chromosomes instead of bins (per barcode)
+  # bin.group a list of all the indexes within each chromosome
+  # chrMatrix - the summed count matrix
+  chr <- (length(unique(bin.all$chr_ind)) -1)    #Number of chromosomes minus the mitochondrial
+  bin.group <- list()
+  chrMatrix <- matrix(0, nrow = chr, ncol = ncol(df))
+  for(i in seq(chr)){
+    g <- subset(bin.all, bin.all$chr_ind==i)
+    bin.group[[i]] <- g$bin_ind
+    chrMatrix[i,] <- colSums(df[bin.group[[i]],])
+  }
+  
+  # If creating bead info and count matrix as object in list instead of exporting to files:
+  colnames(chrMatrix) <- colnames(df)
+  rownames(chrMatrix) <- 1:chr
+  return(chrMatrix) 
+}
 
 
 
